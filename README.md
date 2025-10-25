@@ -125,10 +125,3 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 This project is open for personal and educational use.
 
 ```
-
----
-
-If you want, I can also **update `requirements.txt` and the setup instructions** so the project can be set up in **one command**, fully ready for Windows users.  
-
-Do you want me to do that?
-```
