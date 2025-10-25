@@ -123,5 +123,3 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 ## License
 
 This project is open for personal and educational use.
-
-```
