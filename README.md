@@ -1,8 +1,3 @@
-Perfect 👍 — here’s a **complete and professional `README.md`** for your project, written for Windows users.
-It includes clear setup steps, folder structure, usage instructions, and a section about your `requirements.txt` file.
-
----
-
 ## 📘 README.md
 
 ```markdown
@@ -188,9 +183,4 @@ Developed by **[Your Name]**
 
 ---
 
-```
-
----
-
-Would you like me to include a short **PowerShell setup script (`setup.ps1`)** that automatically installs Python dependencies, verifies Tesseract, and checks for EdgeDriver? That would make setup one-click for new Windows users.
 ```
