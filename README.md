@@ -1,186 +1,139 @@
-## 📘 README.md
+Absolutely! Here’s a complete **README.md** for your project, fully updated with setup instructions, dependencies, and usage:
 
-```markdown
-# 🧮 RGPV Result Automation Script
+````markdown
+# RGPV Result Automation
 
-This project automates the process of fetching student result details (Name, Roll No, SGPA, CGPA, Result Status) from the **RGPV Result Portal** using **Python + Selenium**.
-
-The script:
-- Reads roll numbers from a CSV file  
-- Automatically fills in the form on the website  
-- Captures and reads CAPTCHA images using OCR  
-- Saves extracted results into a separate CSV file  
+A Python automation script to fetch student results from RGPV's result portal, process CAPTCHA using OCR, and save the results to a CSV file.
 
 ---
 
-## 🖥️ Features
+## Features
 
-✅ Automates RGPV result fetching  
-✅ Uses OCR (Tesseract) to solve CAPTCHAs  
-✅ Saves data in a clean CSV format  
-✅ Handles multiple roll numbers automatically  
-✅ Error handling and progress tracking built in  
+- Reads roll numbers from a CSV file (`Students_Record.csv`)
+- Automates form submission on the RGPV result portal
+- Captures and solves CAPTCHA using Tesseract OCR
+- Fetches student result data:
+  - Name
+  - Roll Number
+  - Result Status
+  - SGPA
+  - CGPA
+- Saves all results to a CSV file (`Students_Result_Output.csv`)
+- Supports Microsoft Edge browser via Selenium WebDriver
 
 ---
 
-## 🗂️ Folder Structure
+## Prerequisites
 
-```
+- Windows OS
+- Python 3.8 or higher
+- Microsoft Edge browser
+- Edge WebDriver matching your Edge version
+- Tesseract OCR installed
 
-RGPV_Result_Automation/
-│
-├── main.py                   # Main Python script
-├── requirements.txt          # Python dependency list
-├── Students_Record.csv       # Input CSV (roll numbers)
-├── Students_Result_Output.csv # Output CSV (auto-created)
-├── captcha_downloaded.png    # (Optional) saved CAPTCHA for debugging
-└── README.md                 # Setup and usage guide
+---
 
+## Files
+
+| File | Description |
+|------|-------------|
+| `main.py` | Main automation script |
+| `requirements.txt` | Python dependencies |
+| `Students_Record.csv` | Input CSV with roll numbers |
+| `Students_Result_Output.csv` | Output CSV where results will be saved |
+| `setup.ps1` | Windows setup script |
+
+---
+
+## Setup Instructions (Windows)
+
+1. **Clone or download** the project folder.  
+2. **Open PowerShell** in the project directory.  
+3. Run the following command to temporarily allow script execution and launch the setup script:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\setup.ps1
 ````
 
----
+The setup script will:
 
-## ⚙️ Requirements
+* Install all Python dependencies from `requirements.txt`
+* Verify Python installation
+* Check for Tesseract OCR
+* Check for Edge WebDriver
 
-### 🧩 Software Dependencies
-| Tool | Description | Download Link |
-|------|--------------|---------------|
-| **Python 3.8+** | Required for running the script | [python.org/downloads](https://www.python.org/downloads/) |
-| **Tesseract OCR** | Image-to-text engine used for solving CAPTCHAs | [UB Mannheim Build (Windows)](https://github.com/UB-Mannheim/tesseract/wiki) |
-| **Microsoft Edge** | Browser automated by Selenium | Pre-installed on Windows |
-| **Edge WebDriver** | Required for Selenium to control Edge | [Microsoft Edge WebDriver](https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/) |
+After setup completes successfully, run the program with:
 
----
-
-## 🧾 Python Libraries
-
-The required Python modules are listed in `requirements.txt`.  
-Install them all at once using:
-
-```bash
-pip install -r requirements.txt
-````
-
-### requirements.txt
-
+```powershell
+python main.py
 ```
+
+---
+
+## Usage
+
+1. Prepare a CSV file (`Students_Record.csv`) with roll numbers in the **first column**.
+2. Run the script:
+
+```powershell
+python main.py
+```
+
+3. The script will:
+
+* Open Microsoft Edge
+* Submit each roll number to the RGPV result portal
+* Solve CAPTCHA automatically
+* Fetch results (Name, Roll No., Result Status, SGPA, CGPA)
+* Save results to `Students_Result_Output.csv`
+
+4. Once all roll numbers are processed, close the browser when prompted.
+
+---
+
+## Python Dependencies
+
+All required dependencies are listed in `requirements.txt`:
+
+```text
 selenium
 pillow
 pytesseract
-requests
+```
+
+They can be installed manually with:
+
+```powershell
+pip install -r requirements.txt
 ```
 
 ---
 
-## 🏗️ Windows Setup Instructions
+## Notes
 
-1. **Install Python**
+* Ensure the **paths to Edge WebDriver and Tesseract** in `main.py` are correct:
 
-   * Download and install from [python.org](https://www.python.org/downloads/)
-   * During installation, ✅ check **“Add Python to PATH”**
+```python
+edge_driver_path = r"C:\edgedriver_win64\msedgedriver.exe"
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+```
 
-2. **Install Tesseract OCR**
+* If CAPTCHA is not recognized correctly, check Tesseract installation and image quality.
 
-   * Download from [UB Mannheim Tesseract Page](https://github.com/UB-Mannheim/tesseract/wiki)
-   * Default installation path:
-
-     ```
-     C:\Program Files\Tesseract-OCR\
-     ```
-   * After installation, verify:
-
-     ```bash
-     tesseract --version
-     ```
-
-3. **Install Microsoft Edge WebDriver**
-
-   * Check your Edge browser version:
-     `edge://settings/help`
-   * Download the matching **EdgeDriver** from:
-     [Microsoft Edge WebDriver](https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/)
-   * Extract it to:
-
-     ```
-     C:\edgedriver_win64\
-     ```
-
-4. **Install Python dependencies**
-
-   * From your project folder:
-
-     ```bash
-     pip install -r requirements.txt
-     ```
-
-5. **Prepare CSV Input File**
-
-   * Example `Students_Record.csv`:
-
-     ```
-     0123CS201
-     0123CS202
-     0123CS203
-     ```
-
-6. **Run the Script**
-
-   ```bash
-   python main.py
-   ```
+* Reset button is clicked after each roll number to prepare the form for the next input.
 
 ---
 
-## 🧠 How It Works
+## License
 
-1. Reads roll numbers from `Students_Record.csv`
-2. Opens RGPV result portal automatically
-3. Selects program & semester
-4. Downloads the CAPTCHA image from the correct location (`ctl00_ContentPlaceHolder1_pnlCaptcha`)
-5. Extracts text using OCR (pytesseract)
-6. Submits the form and extracts:
+This project is open for personal and educational use.
 
-   * Name
-   * Roll No
-   * Result Status
-   * SGPA
-   * CGPA
-7. Appends the data to `Students_Result_Output.csv`
+```
 
 ---
 
-## 🧩 Notes
+If you want, I can also **update `requirements.txt` and the setup instructions** so the project can be set up in **one command**, fully ready for Windows users.  
 
-* If the CAPTCHA OCR is inaccurate, you can re-run the script — each attempt downloads a new CAPTCHA.
-* The script includes built-in delays to let pages load properly.
-* The file `captcha_downloaded.png` is saved for debugging purposes.
-* Use a **stable internet connection** for consistent results.
-
----
-
-## 🧰 Troubleshooting
-
-| Issue                                            | Possible Cause         | Solution                                                        |
-| ------------------------------------------------ | ---------------------- | --------------------------------------------------------------- |
-| `ModuleNotFoundError`                            | Missing Python library | Run `pip install -r requirements.txt`                           |
-| `pytesseract.pytesseract.TesseractNotFoundError` | Wrong Tesseract path   | Update `pytesseract.pytesseract.tesseract_cmd` in `main.py`     |
-| CAPTCHA image not clear                          | Website layout change  | Recheck CAPTCHA div ID (`ctl00_ContentPlaceHolder1_pnlCaptcha`) |
-| WebDriver error                                  | Edge version mismatch  | Download matching EdgeDriver version                            |
-
----
-
-## 📄 License
-
-This project is provided **for educational and personal automation use** only.
-Use responsibly and in compliance with RGPV’s website policies.
-
----
-
-## 👨‍💻 Author
-
-Developed by **[Your Name]**
-📧 Contact: *[youremail@example.com](mailto:youremail@example.com)*
-
----
-
+Do you want me to do that?
 ```
