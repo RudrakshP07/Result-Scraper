@@ -1,6 +1,3 @@
-Absolutely! Here’s a complete **README.md** for your project, fully updated with setup instructions, dependencies, and usage:
-
-````markdown
 # RGPV Result Automation
 
 A Python automation script to fetch student results from RGPV's result portal, process CAPTCHA using OCR, and save the results to a CSV file.
@@ -42,8 +39,6 @@ A Python automation script to fetch student results from RGPV's result portal, p
 | `Students_Record.csv` | Input CSV with roll numbers |
 | `Students_Result_Output.csv` | Output CSV where results will be saved |
 | `setup.ps1` | Windows setup script |
-
----
 
 ## Setup Instructions (Windows)
 
