@@ -1,6 +1,8 @@
 import csv
 import time
 import traceback
+import requests
+from io import BytesIO
 from PIL import Image
 import pytesseract
 from selenium import webdriver
@@ -11,116 +13,179 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
-# Specify the path to the EdgeDriver executable
-edge_driver_path = r"C:\Web Driver\msedgedriver.exe"  # Update with the actual path to EdgeDriver
+# ===================== CONFIGURATION =====================
 
-# Specify the path to the Tesseract executable
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"  # Update with the actual path to Tesseract executable
+# Path to Edge WebDriver executable
+edge_driver_path = r"C:\edgedriver_win64\msedgedriver.exe"  # Update if needed
 
-# Specify the path to the CSV file containing roll numbers
-csv_file_path = r"D:\Web Scraper\Students_Record_Cyber_2ndyear.csv"  # Absolute path to the CSV file
+# Path to Tesseract OCR executable
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-# Create options and service
+# Path to input CSV (with roll numbers)
+csv_file_path = r"J:\Git\Students_Record.csv"
+
+# Path to output CSV (where results will be saved)
+output_csv = r"J:\Git\Students_Result_Output.csv"
+
+# ==========================================================
+
+# Create options and service for Edge
 edge_options = Options()
 service = EdgeService(edge_driver_path)
 
 # Create the Edge WebDriver instance
 driver = webdriver.Edge(service=service, options=edge_options)
 
-# Function to read roll numbers from the first column of a CSV file
+
+# ------------------ FUNCTION DEFINITIONS ------------------
+
 def read_roll_numbers(file_path):
+    """Read roll numbers from the first column of a CSV file."""
     roll_numbers = []
     with open(file_path, mode='r') as csv_file:
         csv_reader = csv.reader(csv_file)
         for row in csv_reader:
-            # Assuming roll numbers are in the first column
-            roll_numbers.append(row[0].strip())  # Append roll numbers from the first column
+            if row and row[0].strip():
+                roll_numbers.append(row[0].strip())
     return roll_numbers
 
+
+def save_result_to_csv(roll, name, result_status, sgpa, cgpa, output_path):
+    """Append a student's result data to the output CSV file."""
+    with open(output_path, mode='a', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        if f.tell() == 0:
+            writer.writerow(["Roll No", "Name", "Result Status", "SGPA", "CGPA"])
+        writer.writerow([roll, name, result_status, sgpa, cgpa])
+
+
+# ------------------ MAIN SCRIPT EXECUTION ------------------
+
 try:
-    # Read roll numbers from the specified CSV file
     roll_numbers = read_roll_numbers(csv_file_path)
 
-    # Iterate through each roll number
     for roll_number in roll_numbers:
         try:
-            # Open the URL
+            print(f"\n🔹 Processing roll number: {roll_number}")
+
+            # Open the result website
             url = "http://result.rgpv.ac.in/Result/ProgramSelect.aspx"
             driver.get(url)
 
-            # Locate and click the radio button
+            # Select radio button for program
             radio_button = driver.find_element(By.ID, 'radlstProgram_1')
             radio_button.click()
 
-            # Wait for the page to redirect and load completely
+            # Wait for page to redirect
             WebDriverWait(driver, 10).until(EC.url_changes(url))
 
-            ############################ PAGE 2 ############################  
-            # Interact with the new page after redirection
-            # Locate the text input field and enter the roll number
-            text_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'ctl00_ContentPlaceHolder1_txtrollno')))
+            # ================= PAGE 2 =================
+            # Enter roll number
+            text_input = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, 'ctl00_ContentPlaceHolder1_txtrollno'))
+            )
             text_input.send_keys(roll_number)
 
-            # Locate the dropdown and select a value
+            # Select semester
             dropdown = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_drpSemester')
             select = Select(dropdown)
-            select.select_by_value("3")
+            select.select_by_value("6")
 
-            # Locate the CAPTCHA image element using an XPath expression
-            captcha_image = driver.find_element(By.XPATH, '//img[contains(@src, "CaptchaImage.axd")]')
-            
-            # Define the path to save the CAPTCHA screenshot
-            captcha_screenshot_path = "captcha_screenshot.png"
+            # ===================== CAPTCHA FETCHING =====================
+            try:
+                # Locate the captcha container div
+                captcha_div = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.ID, 'ctl00_ContentPlaceHolder1_pnlCaptcha'))
+                )
 
-            # Take a screenshot of the CAPTCHA element and save it to a file
-            captcha_image.screenshot(captcha_screenshot_path)
-            print(f"CAPTCHA screenshot saved to {captcha_screenshot_path}")
+                # Find the <img> element inside the div
+                captcha_img = captcha_div.find_element(By.TAG_NAME, 'img')
 
-            # Convert the CAPTCHA screenshot to text using OCR (pytesseract)
-            captcha_image_pil = Image.open(captcha_screenshot_path)
-            captcha_answer = pytesseract.image_to_string(captcha_image_pil).strip()
+                # Get the image source URL
+                captcha_src = captcha_img.get_attribute("src")
 
-            # Remove spaces from the CAPTCHA answer
-            captcha_answer = captcha_answer.replace(" ", "")
-            captcha_answer = captcha_answer.replace(".", "")
-            captcha_answer = captcha_answer.replace(",", "")
-            captcha_answer = captcha_answer.replace(";", "")
-            captcha_answer = captcha_answer.replace("'", "")
-            # captcha_answer = captcha_answer.replace("", "")
+                # If the src is relative, make it absolute
+                if captcha_src.startswith("/"):
+                    base_url = driver.current_url.split("/Result")[0]
+                    captcha_src = base_url + captcha_src
 
-            # Delay for 7 seconds before entering the CAPTCHA answer
+                # Download the image from the src
+                response = requests.get(captcha_src)
+                captcha_image_pil = Image.open(BytesIO(response.content))
+
+                # Optional: save locally for debugging
+                captcha_image_pil.save("captcha_downloaded.png")
+                print(f"🖼️ CAPTCHA image downloaded from {captcha_src}")
+
+                # Extract text using pytesseract
+                captcha_answer = pytesseract.image_to_string(captcha_image_pil).strip()
+
+                # Clean OCR result
+                for ch in [" ", ".", ",", ";", "'", "\""]:
+                    captcha_answer = captcha_answer.replace(ch, "")
+
+                print(f"🔠 CAPTCHA interpreted as: '{captcha_answer}'")
+
+            except Exception as captcha_ex:
+                print(f"⚠️ CAPTCHA download or OCR failed: {captcha_ex}")
+                continue
+
+            # Delay before entering CAPTCHA
             time.sleep(7)
 
-            # Locate the CAPTCHA input field
+            # Enter CAPTCHA and submit
             captcha_input = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_TextBox1')
-
-            # Enter the CAPTCHA answer and simulate pressing Enter to submit the form
             captcha_input.send_keys(captcha_answer + Keys.ENTER)
-            
-            ############################ PAGE 3 ############################  
-            # Delay for 7 seconds before clicking the reset button
+
+            # ================= PAGE 3 =================
+            # Wait for result to load
             time.sleep(7)
 
-            # Locate the reset button and click it
+            try:
+                # Grab result details
+                name_elem = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.ID, 'ctl00_ContentPlaceHolder1_lblNameGrading'))
+                )
+                roll_elem = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_lblRollNoGrading')
+                result_status_elem = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_lblResultNewGrading')
+                sgpa_elem = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_lblSGPA')
+                cgpa_elem = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_lblcgpa')
+
+                # Extract text
+                name = name_elem.text.strip()
+                roll = roll_elem.text.strip()
+                result_status = result_status_elem.text.strip()
+                sgpa = sgpa_elem.text.strip()
+                cgpa = cgpa_elem.text.strip()
+
+                # Print result to console
+                print(f"✅ Result for {roll}: {name}")
+                print(f"Result Status: {result_status}, SGPA: {sgpa}, CGPA: {cgpa}")
+
+                # Save result to CSV
+                save_result_to_csv(roll, name, result_status, sgpa, cgpa, output_csv)
+                print(f"📁 Data saved to {output_csv}")
+
+            except Exception as data_ex:
+                print(f"⚠️ Could not fetch result data for roll {roll_number}: {data_ex}")
+
+            # ================= RESET FORM =================
             reset_button = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_btnReset'))
             )
             reset_button.click()
-            
+
         except Exception as ex:
-            # Handle exceptions during roll number processing
-            print(f"An error occurred with roll number {roll_number}: {ex}")
-            # Skip the current roll number and continue with the next one
+            print(f"❌ Error occurred for roll number {roll_number}: {ex}")
             continue
 
-    # Pause the script to observe the action
-    print("Pause: observe the action")
+    print("\n🎉 All roll numbers processed.")
     input("Press Enter to close the browser...")
 
 except Exception as e:
-    print("An error occurred:", e)
+    print("❌ Fatal error:", e)
     print(traceback.format_exc())
 
 finally:
-    # Close the browser
     driver.quit()
+    print("🚪 Browser closed.")
